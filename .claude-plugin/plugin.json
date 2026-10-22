@@ -1,0 +1,67 @@
+{
+  "name": "subthread",
+  "version": "0.3.0",
+  "description": "Ask about any part of a long Claude Code conversation in a side thread that never enters the main conversation.",
+  "author": {
+    "name": "libraqg"
+  },
+  "license": "MIT",
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "contextMode": {
+      "type": "string",
+      "title": "Context mode",
+      "description": "snapshot: a side thread reads the main conversation as it was when the thread opened, until you press Refresh; follow: every question reads it as it is now.",
+      "options": [
+        "snapshot",
+        "follow"
+      ],
+      "default": "snapshot"
+    },
+    "defaultModel": {
+      "type": "string",
+      "title": "Default model",
+      "description": "Model for new side threads: inherit (the main conversation's), an alias such as haiku, or a full model id.",
+      "default": "inherit"
+    },
+    "defaultStrategy": {
+      "type": "string",
+      "title": "Default strategy",
+      "description": "fork: a subagent that shares the main context (main model only); agent: the plugin's own subagent on any model; light: one tool-less answer.",
+      "options": [
+        "fork",
+        "agent",
+        "light"
+      ],
+      "default": "fork"
+    },
+    "maxDepth": {
+      "type": "number",
+      "title": "Maximum depth",
+      "description": "How many nested side-thread levels may be open at once (at least 3).",
+      "default": 5
+    },
+    "autoModeSpawn": {
+      "type": "boolean",
+      "title": "Allow side-thread subagents in auto mode",
+      "description": "In auto mode, let a side-thread question you send start its subagent; the subagent's own tool calls are still judged by auto mode. Off: auto mode answers without tools.",
+      "default": true
+    },
+    "language": {
+      "type": "string",
+      "title": "Pane language",
+      "description": "The pane's language until you switch it with its language button: en (English) or zh (简体中文).",
+      "options": [
+        "en",
+        "zh"
+      ],
+      "default": "en"
+    },
+    "backflowEnabled": {
+      "type": "boolean",
+      "title": "Backflow",
+      "description": "Offer, under each answer, to send it along with your next main-conversation prompt, keep it as a note, or copy it. Off: nothing goes back.",
+      "default": false
+    }
+  }
+}

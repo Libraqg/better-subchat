@@ -1,0 +1,15 @@
+{
+  "//": "core/ is harness-agnostic: no 'claude-code' types are visible here, so importing them fails to compile.",
+  "compilerOptions": {
+    "target": "es2023",
+    "lib": ["es2023"],
+    "types": [],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noEmit": true,
+    "skipLibCheck": true
+  },
+  "include": ["."]
+}
