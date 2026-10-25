@@ -7,10 +7,10 @@ import type { EngineInterface } from 'claude-code'
 import type { Answer, CancelSignal, Effort, Usage } from '../../core/types'
 
 /** The plugin's own agent types: one per thinking effort, since a spawn cannot set it. */
-export const AGENT_NAME = 'subthread'
+export const AGENT_NAME = 'subchat'
 export const EFFORTS: readonly Effort[] = ['low', 'medium', 'high', 'xhigh', 'max']
 export const agentName = (effort?: Effort) => (effort ? `${AGENT_NAME}-${effort}` : AGENT_NAME)
-const agentType = (effort?: Effort) => `subthread:${agentName(effort)}`
+const agentType = (effort?: Effort) => `better-subchat:${agentName(effort)}`
 export const isOwnAgentType = (type: string) => type === agentType() || EFFORTS.some(e => type === agentType(e))
 
 /** The only models a spawn can name (the Agent tool's `model` values); a full id cannot be spawned. */
@@ -55,7 +55,7 @@ export const mentionsOurs = (text: string) => [...ours].some(id => text.includes
 export const isSideThreadDelivery = (origin: { kind: string } | undefined, text: string) => {
   if (origin === undefined || origin.kind === 'composer') return false
   const marked = origin as { handback?: boolean; plugin?: string }
-  return (marked.handback === true && marked.plugin === 'subthread') || mentionsOurs(text)
+  return (marked.handback === true && marked.plugin === 'better-subchat') || mentionsOurs(text)
 }
 
 /** Consumes the window: true at most once per spawn, and only inside it. */

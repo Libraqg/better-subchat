@@ -11,7 +11,7 @@ import type { Ports } from '../../core/ports'
 import type { Answer, Effort, Lang, MainMessage, PromptBlock, SessionDoc, Usage } from '../../core/types'
 import type { AnswerView, Tab } from '../../core/view'
 
-export const docAtom = atom({ plugin: 'subthread', key: 'doc' } as const, emptyDoc(''))
+export const docAtom = atom({ plugin: 'better-subchat', key: 'doc' } as const, emptyDoc(''))
 
 /** Completions get room for a full explanation; the API default of 1024 cuts them short. */
 const MAX_TOKENS = 8192
@@ -68,7 +68,7 @@ export async function updateDoc($: EngineInterface, fn: (doc: SessionDoc) => Ses
 }
 
 /** 0 shows the active (deepest) layer; another depth shows that layer read-only. */
-export const viewDepthAtom = atom({ plugin: 'subthread', key: 'viewDepth' } as const, 0)
+export const viewDepthAtom = atom({ plugin: 'better-subchat', key: 'viewDepth' } as const, 0)
 
 export async function getViewDepth($: EngineInterface): Promise<number> {
   return read($, viewDepthAtom)
@@ -79,7 +79,7 @@ export async function setViewDepth($: EngineInterface, depth: number) {
 }
 
 /** How answers are drawn: the person's choice, kept across sessions in $.store. */
-export const answerViewAtom = atom({ plugin: 'subthread', key: 'answerView' } as const, 'selectable')
+export const answerViewAtom = atom({ plugin: 'better-subchat', key: 'answerView' } as const, 'selectable')
 const ANSWER_VIEW_KEY = 'answerView'
 
 export async function getAnswerView($: EngineInterface): Promise<AnswerView> {
@@ -97,7 +97,7 @@ export async function loadAnswerView($: EngineInterface) {
 }
 
 /** Answer fields are keyed by this, so bumping it remounts them with their text. */
-export const revisionAtom = atom({ plugin: 'subthread', key: 'revision' } as const, 0)
+export const revisionAtom = atom({ plugin: 'better-subchat', key: 'revision' } as const, 0)
 
 export async function getRevision($: EngineInterface): Promise<number> {
   return read($, revisionAtom)
@@ -108,7 +108,7 @@ export async function bumpRevision($: EngineInterface) {
 }
 
 /** The pane's page. */
-export const tabAtom = atom({ plugin: 'subthread', key: 'tab' } as const, 'thread')
+export const tabAtom = atom({ plugin: 'better-subchat', key: 'tab' } as const, 'thread')
 
 export async function getTab($: EngineInterface): Promise<Tab> {
   const tab = await read($, tabAtom)
@@ -120,7 +120,7 @@ export async function setTab($: EngineInterface, tab: Tab) {
 }
 
 /** The closed chain opened in the history page; '' for none. */
-export const openChainAtom = atom({ plugin: 'subthread', key: 'openChain' } as const, '')
+export const openChainAtom = atom({ plugin: 'better-subchat', key: 'openChain' } as const, '')
 
 export async function getOpenChain($: EngineInterface): Promise<string> {
   return read($, openChainAtom)
@@ -131,7 +131,7 @@ export async function setOpenChain($: EngineInterface, id: string) {
 }
 
 /** The one folded part of the pane that is open: '', `menu:<turn>` or `tools:<turn>`. */
-export const unfoldedAtom = atom({ plugin: 'subthread', key: 'unfolded' } as const, '')
+export const unfoldedAtom = atom({ plugin: 'better-subchat', key: 'unfolded' } as const, '')
 
 export async function getUnfolded($: EngineInterface): Promise<string> {
   return read($, unfoldedAtom)
@@ -147,7 +147,7 @@ export async function foldAll($: EngineInterface) {
 }
 
 /** The pane's language: the person's choice, kept across sessions in $.store. */
-export const langAtom = atom({ plugin: 'subthread', key: 'lang' } as const, 'en')
+export const langAtom = atom({ plugin: 'better-subchat', key: 'lang' } as const, 'en')
 const LANG_KEY = 'lang'
 
 export async function getLang($: EngineInterface): Promise<Lang> {

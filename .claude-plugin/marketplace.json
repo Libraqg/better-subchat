@@ -1,12 +1,12 @@
 {
-  "name": "subthread",
-  "description": "subthread: nested side threads beside a Claude Code conversation that never enter the main conversation.",
+  "name": "better-subchat",
+  "description": "better-subchat: nested side threads beside a Claude Code conversation that never enter the main conversation.",
   "owner": {
     "name": "libraqg"
   },
   "plugins": [
     {
-      "name": "subthread",
+      "name": "better-subchat",
       "source": "./"
     }
   ]

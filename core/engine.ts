@@ -114,7 +114,7 @@ export async function ask(
         // The layer's own choice, not the resolved id: 'inherit' leaves the model to the agent type.
         ...(strategy === 'agent' ? { ...(layer.model !== 'inherit' ? { model: layer.model } : {}), ...withEffort } : {}),
         prompt: asAgentPrompt(built, strategy === 'fork'),
-        description: `subthread L${layer.depth}`,
+        description: `better-subchat L${layer.depth}`,
         onTool: line => void ports.doc.update(doc => addToolLine(doc, turnId, line)),
         signal,
       })

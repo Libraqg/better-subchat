@@ -42,7 +42,7 @@ describe('runAgent', () => {
       kind: 'custom',
       model: 'haiku',
       prompt: 'p',
-      description: 'subthread L1',
+      description: 'better-subchat L1',
       onTool: line => lines.push(line),
       autoModeSpawn: false,
     })
@@ -55,7 +55,7 @@ describe('runAgent', () => {
     const answer = await running
     expect(answer).toEqual({ ok: true, text: 'it is pure', model: 'claude-haiku', usage: { in: 3, out: 4, cacheRead: 500, cacheWrite: 0 } })
     expect(lines).toEqual(['Read /repo/src/reducer.ts'])
-    expect(fake.spawns[0]).toEqual({ prompt: 'p', description: 'subthread L1', subagentType: 'subthread:subthread', model: 'haiku' })
+    expect(fake.spawns[0]).toEqual({ prompt: 'p', description: 'better-subchat L1', subagentType: 'better-subchat:subchat', model: 'haiku' })
   })
 
   test('tool lines come from the agent transcript after the side-thread prompt, once each', async () => {
@@ -90,7 +90,7 @@ describe('runAgent', () => {
 
     fake.onSpawn = id => agentFinished(id, { reason: 'answer', answer: 'ok' })
     await runAgent(fakeEngine(fake, 'a9'), { kind: 'custom', effort: 'high', prompt: 'p', description: 'd', onTool: () => {}, autoModeSpawn: false })
-    expect(fake.spawns[0]).toEqual({ prompt: 'p', description: 'd', subagentType: 'subthread:subthread-high' })
+    expect(fake.spawns[0]).toEqual({ prompt: 'p', description: 'd', subagentType: 'better-subchat:subchat-high' })
   })
 
   test('an ending seen before the spawn resolves is kept for it', async () => {
@@ -143,7 +143,7 @@ describe('isSideThreadDelivery', () => {
     fake.onSpawn = id => agentFinished(id, { reason: 'answer', answer: 'x' })
     await runAgent(fakeEngine(fake, 'a10'), { kind: 'fork', prompt: 'p', description: 'd', onTool: () => {}, autoModeSpawn: false })
 
-    expect(isSideThreadDelivery({ kind: 'peer', handback: true, plugin: 'subthread' } as { kind: string }, 'report')).toBe(true)
+    expect(isSideThreadDelivery({ kind: 'peer', handback: true, plugin: 'better-subchat' } as { kind: string }, 'report')).toBe(true)
     expect(isSideThreadDelivery({ kind: 'task-notification' }, 'task a10 finished')).toBe(true)
     expect(isSideThreadDelivery({ kind: 'peer', handback: true, plugin: 'other' } as { kind: string }, 'report')).toBe(false)
     expect(isSideThreadDelivery({ kind: 'peer' }, 'hello')).toBe(false)

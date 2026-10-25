@@ -92,7 +92,7 @@ export const statusLine = (doc: SessionDoc, lang: Lang = 'en'): string | undefin
   const s = strings(lang)
   const model = layer.model === 'inherit' ? s.inherit : layer.model
   const extras = [...(layer.effort ? [layer.effort] : []), ...(layer.light ? [s.strategy.light] : [])]
-  return `subthread: L${layer.depth} · ${s.snapshot}@${doc.active.anchorN} · ${model}${extras.map(x => ` · ${x}`).join('')}`
+  return `better-subchat: L${layer.depth} · ${s.snapshot}@${doc.active.anchorN} · ${model}${extras.map(x => ` · ${x}`).join('')}`
 }
 
 const turnView = (t: Turn, lang: Lang): TurnView => ({

@@ -139,7 +139,7 @@ describe('engine', () => {
     expect(turn?.status).toBe('done')
     expect(turn?.a).toBe('because')
     expect(turn?.anchorN).toBe(3)
-    expect(statusLine(fake.doc())).toBe('subthread: L1 · snapshot@3 · inherit')
+    expect(statusLine(fake.doc())).toBe('better-subchat: L1 · snapshot@3 · inherit')
   })
 
   test('records an abort and an error, and refuses a second question while one runs', async () => {
@@ -295,7 +295,7 @@ describe('effort and language', () => {
     expect(noteText('zh', { code: 'spawn-refused', detail: 'unsupported-model' })).toContain('子代理只能使用 sonnet')
     const opened = openLayer(emptyDoc('s1'), { topic: '', anchorN: 1, model: 'inherit', maxDepth: 3, now: 1, id: 'c' })
     if (!('doc' in opened)) throw new Error('open failed')
-    expect(statusLine(opened.doc, 'zh')).toBe('subthread: L1 · 快照@1 · 继承')
+    expect(statusLine(opened.doc, 'zh')).toBe('better-subchat: L1 · 快照@1 · 继承')
   })
 })
 

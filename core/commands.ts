@@ -1,4 +1,4 @@
-// Parses the arguments of `/subthread` (alias `/st`).
+// Parses the arguments of `/better-subchat` (alias `/sc`).
 
 export type Command =
   | { kind: 'open'; question?: string }
@@ -28,4 +28,4 @@ export const parseCommand = (args: string): Command => {
 
 /** The one line a command leaves in the main conversation (design decision ④). */
 export const ignoreLine = (depth: number) =>
-  `↳ subthread: handled in side thread L${depth}; the main conversation should ignore this line.`
+  `↳ better-subchat: handled in side thread L${depth}; the main conversation should ignore this line.`

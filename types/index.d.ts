@@ -2,17 +2,17 @@
 // self-contained, so the shapes below mirror core/types.ts by hand; keep the
 // two in step (tests/contract-drift.ts asserts both ways under tsc).
 
-export type SubthreadUsage = { in: number; out: number; cacheRead: number; cacheWrite: number }
+export type BetterSubchatUsage = { in: number; out: number; cacheRead: number; cacheWrite: number }
 
-export type SubthreadEffort = 'low' | 'medium' | 'high' | 'xhigh' | 'max'
+export type BetterSubchatEffort = 'low' | 'medium' | 'high' | 'xhigh' | 'max'
 
-export type SubthreadNote =
+export type BetterSubchatNote =
   | { code: 'fork-model' }
   | { code: 'fork-effort' }
   | { code: 'nothing-to-fork' }
   | { code: 'spawn-refused'; detail?: string }
 
-export type SubthreadTurn = {
+export type BetterSubchatTurn = {
   id: string
   q: string
   a?: string
@@ -20,48 +20,48 @@ export type SubthreadTurn = {
   error?: string
   strategy: 'fork' | 'agent' | 'light'
   model: string
-  usage?: SubthreadUsage
+  usage?: BetterSubchatUsage
   tools?: string[]
-  notes?: SubthreadNote[]
+  notes?: BetterSubchatNote[]
   note?: string
   anchorN: number
   at: number
 }
 
-export type SubthreadLayer = {
+export type BetterSubchatLayer = {
   depth: number
   topic: string
   model: string
-  effort?: SubthreadEffort
+  effort?: BetterSubchatEffort
   light?: boolean
-  turns: SubthreadTurn[]
+  turns: BetterSubchatTurn[]
   createdAt: number
   closedAt?: number
 }
 
-export type SubthreadChain = {
+export type BetterSubchatChain = {
   id: string
   anchorN: number
   refreshes: { from: number; to: number; at: number }[]
-  layers: SubthreadLayer[]
+  layers: BetterSubchatLayer[]
   openedAt: number
   closedAt?: number
 }
 
-export type SubthreadDoc = {
+export type BetterSubchatDoc = {
   v: 1
   sessionId: string
-  active?: SubthreadChain
-  archived: SubthreadChain[]
+  active?: BetterSubchatChain
+  archived: BetterSubchatChain[]
   notes?: { id: string; from: string; text: string; at: number }[]
   pendingBackflow?: { from: string; text: string; turnId?: string }
 }
 
 declare module 'claude-code' {
   interface PluginState {
-    subthread: {
+    'better-subchat': {
       /** The session's side-thread document: active chain and archive. */
-      doc: SubthreadDoc
+      doc: BetterSubchatDoc
       /** 0 shows the active (deepest) layer; another depth shows that layer read-only. */
       viewDepth: number
       /** The pane's language. */

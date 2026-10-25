@@ -3,11 +3,11 @@ import { expect, mock, test } from 'claude-code/testing'
 import type { On } from 'claude-code'
 
 const PANE = {
-  plugin: 'subthread',
+  plugin: 'better-subchat',
   component: 'Pane',
-  requestId: 'subthread',
+  requestId: 'better-subchat',
   props: {
-    title: 'subthread',
+    title: 'better-subchat',
     isFocused: true,
     bodyColumns: 60,
     placement: 'dock',
@@ -26,9 +26,9 @@ const findAnswer = async (ui: unknown, text: RegExp) => {
   return field ?? (await drawing.find({ type: 'Markdown', text } as never))
 }
 
-/** A `/st` run as the person types it in the fullscreen terminal. */
+/** A `/sc` run as the person types it in the fullscreen terminal. */
 const st = (args: string) =>
-  ({ command: 'st', args, origin: { kind: 'composer' }, presentation: { isFullscreen: true, columns: 120 } }) as const
+  ({ command: 'sc', args, origin: { kind: 'composer' }, presentation: { isFullscreen: true, columns: 120 } }) as const
 
 const USAGE = { input_tokens: 12, output_tokens: 7, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 }
 const LIGHT = { options: { defaultStrategy: 'light' } }
@@ -62,7 +62,7 @@ const world = (on: On, spawn?: (n: number) => { deny: string }): World => {
   mock.store(on)
   mock.env(on, { HOME: '/home/test' })
   on('command.register', (_, e) => ({ value: { command: e.name } }))
-  on('agent.register', (_, e) => ({ value: { agent: `subthread:${e.name}` } }))
+  on('agent.register', (_, e) => ({ value: { agent: `better-subchat:${e.name}` } }))
   on('session.start', (_, e) => ({ cwd: e.cwd }))
   on('session.end', (_, e) => ({ sessionId: e.sessionId }))
   on('session.id', () => ({ value: w.session.id }))
@@ -125,7 +125,7 @@ test('light mode: a side thread opens, answers and closes on every surface that 
     expect(await ui.find({ type: 'Text', text: /claude-test · light · in 12 · out 7/ })).toBeDefined()
 
     await ui.press({ key: 'close' })
-    expect(await ui.find({ type: 'Text', text: /Run \/st to open a side thread/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /Run \/sc to open a side thread/ })).toBeDefined()
     await ui.unmount()
   }
 
@@ -166,7 +166,7 @@ test('by default a question asks for a fork with a soft snapshot; another model 
   expect(await ui.find({ type: 'Text', text: /· agent$/ })).toBeDefined()
   expect(await ui.find({ type: 'Text', text: /Fork mode always runs on the main model/ })).toBeDefined()
   await ui.input({ key: 'ask', text: 'again on haiku' })
-  expect(w.spawns[1]?.subagentType).toBe('subthread:subthread')
+  expect(w.spawns[1]?.subagentType).toBe('better-subchat:subchat')
   expect(w.spawns[1]?.model).toBe('haiku')
   expect(w.spawns[1]?.prompt).toContain('<main_conversation through="1">')
   expect(w.spawns[1]?.prompt).not.toContain('<side_thread_rules>')
@@ -222,7 +222,7 @@ test('side threads are saved per session and come back when that session returns
   await first.input({ key: 'ask', text: 'remember me?' })
   await first.unmount()
   await $.session.end({ reason: 'other', sessionId: 'session-1', resume: { id: 'session-1' } })
-  const saved = w.files.get('/home/test/.claude/plugins/data/subthread/session-1.json')
+  const saved = w.files.get('/home/test/.claude/plugins/data/better-subchat/session-1.json')
   expect(saved).toContain('remember me?')
 
   // Another session starts with nothing; the first one comes back whole.
@@ -238,7 +238,7 @@ test('side threads are saved per session and come back when that session returns
   await ui.unmount()
 })
 
-test('with a thread open, /st brings the pane back; /st new opens the next level', async ($, on) => {
+test('with a thread open, /sc brings the pane back; /sc new opens the next level', async ($, on) => {
   const w = world(on)
   await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
   await $.command.run(st(''))
@@ -270,7 +270,7 @@ test('thinking effort per layer picks the matching agent type', async ($, on) =>
   expect(await ui.find({ type: 'Text', text: /· agent$/ })).toBeDefined()
   expect(await ui.find({ type: 'Text', text: /thinks at the session's effort/ })).toBeDefined()
   await ui.input({ key: 'ask', text: 'think hard' })
-  expect(w.spawns[0]?.subagentType).toBe('subthread:subthread-high')
+  expect(w.spawns[0]?.subagentType).toBe('better-subchat:subchat-high')
   expect(w.spawns[0]?.model).toBeUndefined()
 
   await $.command.run(st('effort inherit'))
@@ -410,7 +410,7 @@ test('refresh appears when the main conversation moved on, and moves the snapsho
   await ui.unmount()
 })
 
-test('/st list shows closed chains to read; /st settings writes the plugin settings', LIGHT, async ($, on) => {
+test('/sc list shows closed chains to read; /sc settings writes the plugin settings', LIGHT, async ($, on) => {
   const w = world(on)
   w.selection = { text: 'old topic' }
   await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
@@ -430,9 +430,9 @@ test('/st list shows closed chains to read; /st settings writes the plugin setti
   await ui.select({ key: 'setting:backflowEnabled', value: 'true' })
   await ui.select({ key: 'setting:maxDepth', value: '7' })
   expect(w.settings).toEqual([
-    { key: 'subthread.contextMode', value: 'follow' },
-    { key: 'subthread.backflowEnabled', value: true },
-    { key: 'subthread.maxDepth', value: 7 },
+    { key: 'better-subchat.contextMode', value: 'follow' },
+    { key: 'better-subchat.backflowEnabled', value: true },
+    { key: 'better-subchat.maxDepth', value: 7 },
   ])
   await ui.unmount()
 })

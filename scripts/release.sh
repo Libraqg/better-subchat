@@ -21,5 +21,5 @@ command -v npx >/dev/null 2>&1 || { echo "tsc must pass before a release: instal
 
 echo
 echo "All checks passed. To publish:"
-echo "  git tag -a $tag -m \"subthread $tag\" && git push origin $tag"
-echo "  gh release create $tag --title \"subthread $tag\" --notes-file <(sed -n '/^## \\[$version\\]/,/^## \\[/p' CHANGELOG.md | sed '\$d')"
+echo "  git tag -a $tag -m \"better-subchat $tag\" && git push origin $tag"
+echo "  gh release create $tag --title \"better-subchat $tag\" --notes-file <(sed -n '/^## \\[$version\\]/,/^## \\[/p' CHANGELOG.md | sed '\$d')"

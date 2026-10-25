@@ -16,7 +16,7 @@ export async function dataDir($: EngineInterface): Promise<string> {
   const own = await $.env.get('CLAUDE_PLUGIN_DATA')
   if (own) return own
   const home = await $.env.get('HOME')
-  return `${home ?? '.'}/.claude/plugins/data/subthread`
+  return `${home ?? '.'}/.claude/plugins/data/better-subchat`
 }
 
 const fileOf = (dir: string, sessionId: string) => `${dir}/${sessionId.replace(/[^\w.-]/g, '_')}.json`
@@ -32,9 +32,9 @@ export async function loadDoc($: EngineInterface, sessionId: string): Promise<Se
     if (!(await $.fs.exists(path))) return emptyDoc(sessionId)
     const parsed: unknown = JSON.parse(await $.fs.read(path))
     if (isDoc(parsed) && parsed.sessionId === sessionId) return parsed
-    $.ui.log(`subthread: ignored an unreadable side-thread file (${path})`)
+    $.ui.log(`better-subchat: ignored an unreadable side-thread file (${path})`)
   } catch (err) {
-    $.ui.log(`subthread: could not read side threads: ${err instanceof Error ? err.message : String(err)}`)
+    $.ui.log(`better-subchat: could not read side threads: ${err instanceof Error ? err.message : String(err)}`)
   }
   return emptyDoc(sessionId)
 }
@@ -54,7 +54,7 @@ export async function saveDoc($: EngineInterface, doc: SessionDoc) {
   try {
     await $.fs.write(fileOf(await dataDir($), doc.sessionId), fitted(doc))
   } catch (err) {
-    $.ui.log(`subthread: could not save side threads: ${err instanceof Error ? err.message : String(err)}`)
+    $.ui.log(`better-subchat: could not save side threads: ${err instanceof Error ? err.message : String(err)}`)
   }
 }
 

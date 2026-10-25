@@ -51,8 +51,8 @@ import {
   updateDoc,
 } from './adapter/ports'
 
-const PANE = 'subthread'
-const COMMANDS = ['subthread', 'st'] as const
+const PANE = 'better-subchat'
+const COMMANDS = ['better-subchat', 'sc'] as const
 
 type Config = Settings & { autoModeSpawn: boolean; language: Lang; backflowEnabled: boolean }
 
@@ -173,7 +173,7 @@ async function openLayer($: EngineInterface, config: Config, topic: string) {
 }
 
 async function showPane($: EngineInterface) {
-  const placed = await $.ui.open({ id: PANE, title: 'subthread' })
+  const placed = await $.ui.open({ id: PANE, title: 'better-subchat' })
   if (!placed.isPlaced) $.ui.toast((await say($)).notShown(placed.reason))
 }
 
@@ -233,7 +233,7 @@ async function copyAnswer($: EngineInterface, turnId: string, surface: RenderSur
 }
 
 async function setSetting($: EngineInterface, field: string, value: string) {
-  const set = await $.config.set({ key: `subthread.${field}`, value: settingValue(field, value) })
+  const set = await $.config.set({ key: `better-subchat.${field}`, value: settingValue(field, value) })
   const t = await say($)
   $.ui.toast(set.deny === undefined ? t.settingSet : t.settingDenied(set.deny))
 }
@@ -261,8 +261,8 @@ async function runCommand($: EngineInterface, e: CommandRunInput, config: Config
 
   if (command.kind === 'open' || command.kind === 'new') {
     const selected = (await $.ui.selection())?.text.trim() ?? ''
-    // With a thread open, plain /st only brings the pane back. A new layer
-    // takes /st new, the pane's button, or a fresh selection (terminal).
+    // With a thread open, plain /sc only brings the pane back. A new layer
+    // takes /sc new, the pane's button, or a fresh selection (terminal).
     const wantsLayer = current === undefined || command.kind === 'new' || selected !== ''
     if (wantsLayer && current !== undefined && current.depth >= config.maxDepth) {
       $.ui.toast(t.maxDepth(config.maxDepth))
@@ -316,7 +316,7 @@ export const register: Register = (on, options) => {
     for (const name of COMMANDS) {
       await $.command.register({
         name,
-        description: name === 'st' ? 'Alias of /subthread' : 'Ask about the selection in a side thread that stays out of the main conversation',
+        description: name === 'sc' ? 'Alias of /better-subchat' : 'Ask about the selection in a side thread that stays out of the main conversation',
         argumentHint: '[question] | new | close | up | refresh | model <name> | effort <level> | list | settings',
       })
     }
@@ -324,7 +324,7 @@ export const register: Register = (on, options) => {
     for (const effort of [undefined, ...EFFORTS]) {
       await $.agent.register({
         name: agentName(effort),
-        description: 'Answers a side-thread question for the subthread plugin. Started only by the plugin.',
+        description: 'Answers a side-thread question for the better-subchat plugin. Started only by the plugin.',
         prompt: `${SYSTEM}\n${TOOL_RULES}`,
         // No nested agents, and no hand-back: the answer comes back through
         // turn.complete and must never be delivered to the main conversation.
@@ -354,9 +354,9 @@ export const register: Register = (on, options) => {
   // never another plugin's or the model's Agent call, never a subagent's tools.
   on('tool.check', { tool: 'Agent' }, async ($, e, next) => {
     const verdict = await next(e)
-    if (e.agentId !== undefined || next.origin.plugin !== 'subthread') return verdict
+    if (e.agentId !== undefined || next.origin.plugin !== 'better-subchat') return verdict
     if (!takeAllowWindow() || verdict.decision !== 'ask') return verdict
-    return { decision: 'allow' as const, reason: 'subthread: a side-thread question the person sent' }
+    return { decision: 'allow' as const, reason: 'better-subchat: a side-thread question the person sent' }
   }).catch(($, e, next) => next(e))
 
   // Tool lines as they happen, where the engine raises them here; agents.ts
@@ -411,18 +411,18 @@ export const register: Register = (on, options) => {
     const content = e.message.content
     const text = typeof content === 'string' ? content : content.map(block => (block.type === 'text' ? block.text : '')).join('\n')
     if (!isSideThreadDelivery(e.origin as { kind: string }, text)) return next(e)
-    return next({ ...e, message: { ...e.message, content: [{ type: 'text', text: '[subthread: a side-thread report was kept out of the main conversation]' }] } })
+    return next({ ...e, message: { ...e.message, content: [{ type: 'text', text: '[better-subchat: a side-thread report was kept out of the main conversation]' }] } })
   }).catch(($, e, next) => next(e))
 
   // A question typed in the pane is asked from this hook, not the Input's own
   // handler, so its spawn happens inside one of this plugin's hooks (see startAsk).
-  on('ui.input', { plugin: 'subthread', element: 'ask' }, async ($, e, next) => {
+  on('ui.input', { plugin: 'better-subchat', element: 'ask' }, async ($, e, next) => {
     if (e.kind === 'submit') await startAsk($, config, e.value)
     return next(e)
   })
 
-  on('command.run', { command: 'subthread' }, ($, e) => runCommand($, e, config))
-  on('command.run', { command: 'st' }, ($, e) => runCommand($, e, config))
+  on('command.run', { command: 'better-subchat' }, ($, e) => runCommand($, e, config))
+  on('command.run', { command: 'sc' }, ($, e) => runCommand($, e, config))
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
     const doc = await getDoc($)
