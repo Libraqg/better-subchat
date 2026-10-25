@@ -106,6 +106,7 @@ const EN = {
     settingSet: 'better-subchat: setting saved; the plugin reloads to apply it',
     settingDenied: (why: string) => `better-subchat: the setting was not changed (${why})`,
     dropped: 'better-subchat: the side-thread reply stays in the pane',
+    kept: 'better-subchat keeps side-thread replies in its pane; nothing goes to the main conversation',
   },
 }
 
@@ -214,6 +215,7 @@ const ZH: Strings = {
     settingSet: 'better-subchat：设置已保存，插件会重新加载以生效',
     settingDenied: (why: string) => `better-subchat：设置没有改动（${why}）`,
     dropped: 'better-subchat：子对话的回答只留在面板里',
+    kept: 'better-subchat：子对话的回答只留在面板里，不会发到主对话',
   },
 }
 

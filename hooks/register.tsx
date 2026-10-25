@@ -23,7 +23,7 @@ import { strings } from '../core/i18n'
 import type { ContextMode, Effort, Lang, Settings, Strategy } from '../core/types'
 import { buildHistory, buildNotes, buildView, statusLine } from '../core/view'
 import type { Tab } from '../core/view'
-import { EFFORTS, agentFinished, agentName, agentUsedTool, isAwaited, isOurs, isOwnAgentType, isSideThreadDelivery, takeAllowWindow, toolLine } from './adapter/agents'
+import { EFFORTS, HANDBACK_TOOL, agentFinished, agentName, agentUsedTool, isAwaited, isOurs, isOwnAgentType, isSideThreadDelivery, isSideThreadReceive, keepReport, takeAllowWindow, toolLine } from './adapter/agents'
 import { drawPane } from './adapter/pane'
 import type { SettingRow } from './adapter/pane'
 import { loadDoc, saveDoc } from './adapter/persist'
@@ -52,6 +52,12 @@ import {
 } from './adapter/ports'
 
 const PANE = 'better-subchat'
+
+/** Model-facing, for the plugin's own subagents: the answer is read from the run, never handed back. */
+const HANDBACK_RULE = `When you are done, write your answer as your final message. Do not call ${HANDBACK_TOOL}: the plugin reads your final message and shows it to the person.`
+
+/** What a refused hand-back tells the subagent, so it ends instead of trying again. */
+const HANDBACK_REFUSAL = `Your report was received and is shown to the person in the side-thread pane. Do not call ${HANDBACK_TOOL} again: end your turn now, with no further tool calls.`
 const COMMANDS = ['better-subchat', 'sc'] as const
 
 type Config = Settings & { autoModeSpawn: boolean; language: Lang; backflowEnabled: boolean }
@@ -325,10 +331,10 @@ export const register: Register = (on, options) => {
       await $.agent.register({
         name: agentName(effort),
         description: 'Answers a side-thread question for the better-subchat plugin. Started only by the plugin.',
-        prompt: `${SYSTEM}\n${TOOL_RULES}`,
-        // No nested agents, and no hand-back: the answer comes back through
-        // turn.complete and must never be delivered to the main conversation.
-        disallowedTools: ['Agent', 'SubagentHandback'],
+        prompt: `${SYSTEM}\n${TOOL_RULES}\n${HANDBACK_RULE}`,
+        // No nested agents. (SubagentHandback is not governed by this list:
+        // the tool.call hook below refuses it.)
+        disallowedTools: ['Agent'],
         model: 'inherit',
         ...(effort !== undefined ? { effort } : {}),
       })
@@ -361,6 +367,18 @@ export const register: Register = (on, options) => {
 
   // Tool lines as they happen, where the engine raises them here; agents.ts
   // also reads them from the agent's own transcript, deduplicated by id.
+  // A subagent of this plugin reports through Claude Code's SubagentHandback
+  // tool, which would deliver the report to the main conversation. The call is
+  // refused here (so nothing is delivered and no notice shows) and its report
+  // kept as the side-thread answer.
+  // An internal tool, outside the public tool names: matched by pattern.
+  on('tool.call', { tool: /^SubagentHandback$/ }, ($, e, next) => {
+    if (!isAwaited(e.agentId)) return next(e)
+    const report = (e as unknown as { message?: unknown }).message
+    if (typeof report === 'string') keepReport(e.agentId, report)
+    return { deny: HANDBACK_REFUSAL }
+  }).catch(($, e, next) => next(e))
+
   on('tool.call', async ($, e, next) => {
     if (isOurs(e.agentId)) agentUsedTool(e.agentId, e.tool_use_id, toolLine(String(e.tool), e as unknown as Record<string, unknown>))
     return next(e)
@@ -388,10 +406,21 @@ export const register: Register = (on, options) => {
     return next(e)
   })
 
-  // A side thread never reports into the main conversation (design decision ②):
-  // a subagent the plugin spawned hands its report back to the main loop as a
-  // peer message, which is dropped here before the main model reads it.
-  //
+  // A side thread never reports into the main conversation (design decision ②).
+  // Its hand-back is refused above (tool.call on SubagentHandback); a message a
+  // subagent sends on its own is stopped where it leaves (session.send) or
+  // arrives (session.receive); prompt.submit below drops anything that still
+  // gets through, which Claude Code shows as a notice.
+  on('session.send', async ($, e, next) =>
+    isOurs(e.agentId) ? { isDelivered: false as const, reason: (await say($)).kept } : next(e),
+  ).catch(($, e, next) => next(e))
+
+  on('session.receive', async ($, e, next) =>
+    e.agentId === undefined && isSideThreadReceive(e.origin as { kind: string; plugin?: string }, e.text)
+      ? { consumed: (await say($)).kept }
+      : next(e),
+  ).catch(($, e, next) => next(e))
+
   // Backflow (design §2.4) is the one way in, and only when the person asked:
   // an answer they sent "to the next prompt" rides along with their next own
   // prompt as context, labelled with its source, and is then cleared.

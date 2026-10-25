@@ -27,6 +27,8 @@ const ours = new Set<string>()
 const waiting = new Map<string, (done: Done) => void>()
 const early = new Map<string, Done>()
 const sinks = new Map<string, Sink>()
+/** Reports a subagent tried to hand back to the main conversation; they become its answer instead. */
+const reports = new Map<string, string>()
 
 // Design §13: a one-shot window, opened only right before a spawn the person
 // asked for (a question they sent), that lets this plugin's own Agent check
@@ -58,6 +60,15 @@ export const isSideThreadDelivery = (origin: { kind: string } | undefined, text:
   return (marked.handback === true && marked.plugin === 'better-subchat') || mentionsOurs(text)
 }
 
+/**
+ * A delivery arriving at the main conversation from one of this plugin's
+ * subagents (its hand-back): a peer message naming one of its agents, or
+ * marked as this plugin's. Used only to keep such a message out, never to let
+ * anything in, so the sender's own claim of a plugin name is enough here.
+ */
+export const isSideThreadReceive = (origin: { kind: string; plugin?: string }, text: string) =>
+  origin.kind === 'peer' && (origin.plugin === 'better-subchat' || mentionsOurs(text))
+
 /** Consumes the window: true at most once per spawn, and only inside it. */
 export const takeAllowWindow = () => {
   const isOpen = Date.now() < allowUntil
@@ -65,7 +76,20 @@ export const takeAllowWindow = () => {
   return isOpen
 }
 
-export function agentFinished(agentId: string, done: Done) {
+/**
+ * Keeps the report a subagent tried to hand back (its `SubagentHandback`
+ * message, refused so it never reaches the main conversation) as its answer.
+ */
+export function keepReport(agentId: string, report: string) {
+  reports.set(agentId, report)
+}
+
+export function agentFinished(agentId: string, ending: Done) {
+  // A refused hand-back leaves the report only in that call: it is the answer,
+  // whatever the subagent said about the refusal afterwards.
+  const report = reports.get(agentId)
+  reports.delete(agentId)
+  const done: Done = report && ending.reason === 'answer' ? { ...ending, answer: report } : ending
   const resolve = waiting.get(agentId)
   if (resolve) {
     waiting.delete(agentId)
@@ -83,10 +107,13 @@ export const toolLine = (tool: string, input: Record<string, unknown>) => {
   return `${tool}${arg ? ` ${arg.length > 60 ? `${arg.slice(0, 60)}…` : arg}` : ''}`
 }
 
+/** Claude Code's own plumbing in a subagent's run, not work done for the person: never shown as a tool line. */
+export const HANDBACK_TOOL = 'SubagentHandback'
+
 /** A tool call seen as it happens (when the engine raises it to this plugin); deduplicated by id. */
 export function agentUsedTool(agentId: string, toolUseId: string, line: string) {
   const sink = sinks.get(agentId)
-  if (!sink || sink.seen.has(toolUseId)) return
+  if (!sink || sink.seen.has(toolUseId) || line.startsWith(HANDBACK_TOOL)) return
   sink.seen.add(toolUseId)
   sink.emit(line)
 }

@@ -9,6 +9,9 @@ All notable changes to this project are documented here. The format follows
 ### Changed
 - Renamed from **subthread** to **better-subchat**: plugin, marketplace and repository (`Libraqg/better-subchat`); commands `/better-subchat` and `/sc` (were `/subthread` and `/st`); settings under `better-subchat.*`; side threads saved under `~/.claude/plugins/data/better-subchat/` (the old folder is left as it was). Uninstall `subthread@subthread` before installing.
 
+### Fixed
+- In auto mode, a side thread on another model or effort no longer makes Claude Code show "A hook blocked your prompt". Its subagent reports through Claude Code's `SubagentHandback` tool, which delivered the report to the main conversation; that call is now refused and its report kept as the side-thread answer. A message a subagent sends on its own is stopped silently at `session.send` / `session.receive`.
+
 ## [0.3.0] - 2026-10-22
 
 ### Added

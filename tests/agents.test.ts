@@ -3,7 +3,7 @@
 import { describe, expect, test } from 'claude-code/testing'
 import type { EngineInterface } from 'claude-code'
 
-import { agentFinished, agentUsedTool, isAwaited, isOurs, isSideThreadDelivery, runAgent, takeAllowWindow, toolLine } from '../hooks/adapter/agents'
+import { agentFinished, agentUsedTool, isAwaited, isOurs, isSideThreadDelivery, isSideThreadReceive, keepReport, runAgent, takeAllowWindow, toolLine } from '../hooks/adapter/agents'
 
 type Row = { role: 'user' | 'assistant'; text: string; toolUses: { tool_use_id: string; tool: string; input: Record<string, unknown> }[] }
 type Fake = { spawns: unknown[]; stops: string[]; onSpawn?: (id: string) => void; transcript?: Row[] }
@@ -58,7 +58,7 @@ describe('runAgent', () => {
     expect(fake.spawns[0]).toEqual({ prompt: 'p', description: 'better-subchat L1', subagentType: 'better-subchat:subchat', model: 'haiku' })
   })
 
-  test('tool lines come from the agent transcript after the side-thread prompt, once each', async () => {
+  test('tool lines come from the agent transcript after the side-thread prompt, once each, without the hand-back', async () => {
     const fake: Fake = {
       spawns: [],
       stops: [],
@@ -67,6 +67,7 @@ describe('runAgent', () => {
         { role: 'user', text: '<side_thread>\nq', toolUses: [] },
         { role: 'assistant', text: '', toolUses: [{ tool_use_id: 't1', tool: 'Read', input: { file_path: '/a.ts' } }] },
         { role: 'assistant', text: '', toolUses: [{ tool_use_id: 't2', tool: 'Grep', input: { pattern: 'closeFrom' } }] },
+        { role: 'assistant', text: '', toolUses: [{ tool_use_id: 't3', tool: 'SubagentHandback', input: { message: 'report' } }] },
       ],
     }
     const lines: string[] = []
@@ -148,5 +149,37 @@ describe('isSideThreadDelivery', () => {
     expect(isSideThreadDelivery({ kind: 'peer', handback: true, plugin: 'other' } as { kind: string }, 'report')).toBe(false)
     expect(isSideThreadDelivery({ kind: 'peer' }, 'hello')).toBe(false)
     expect(isSideThreadDelivery({ kind: 'composer' }, 'why did a10 fail?')).toBe(false)
+  })
+})
+
+describe('isSideThreadReceive', () => {
+  test('a peer delivery marked as this plugin or naming its agent is kept out; others pass', async () => {
+    const fake: Fake = { spawns: [], stops: [] }
+    fake.onSpawn = id => agentFinished(id, { reason: 'answer', answer: 'x' })
+    await runAgent(fakeEngine(fake, 'a11'), { kind: 'fork', prompt: 'p', description: 'd', onTool: () => {}, autoModeSpawn: false })
+
+    expect(isSideThreadReceive({ kind: 'peer', plugin: 'better-subchat' }, 'report')).toBe(true)
+    expect(isSideThreadReceive({ kind: 'peer' }, 'agent a11 finished')).toBe(true)
+    expect(isSideThreadReceive({ kind: 'peer', plugin: 'other' }, 'hello')).toBe(false)
+    expect(isSideThreadReceive({ kind: 'task-notification' }, 'a11')).toBe(false)
+  })
+})
+
+describe('keepReport', () => {
+  test('a refused hand-back report becomes the answer, not what the subagent said after', async () => {
+    const fake: Fake = { spawns: [], stops: [] }
+    fake.onSpawn = id => {
+      keepReport(id, 'the real report')
+      agentFinished(id, { reason: 'answer', answer: 'My hand-back was refused.' })
+    }
+    const answer = await runAgent(fakeEngine(fake, 'a12'), { kind: 'custom', prompt: 'p', description: 'd', onTool: () => {}, autoModeSpawn: false })
+    expect(answer).toEqual({ ok: true, text: 'the real report' })
+
+    // Without a kept report the subagent's own final text stands.
+    fake.onSpawn = id => agentFinished(id, { reason: 'answer', answer: 'plain answer' })
+    expect(await runAgent(fakeEngine(fake, 'a13'), { kind: 'custom', prompt: 'p', description: 'd', onTool: () => {}, autoModeSpawn: false })).toEqual({
+      ok: true,
+      text: 'plain answer',
+    })
   })
 })

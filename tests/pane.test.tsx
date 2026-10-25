@@ -69,6 +69,7 @@ const world = (on: On, spawn?: (n: number) => { deny: string }): World => {
   on('session.model', () => ({ value: 'claude-test' }))
   on('session.messages', () => ({ value: [...w.main] }))
   on('ui.copy', () => ({ value: { isCopied: false, reason: 'no-surface' } }))
+  on('session.receive', (_, e) => ({ text: e.text }))
   on('config.set', (_, e) => {
     w.settings.push({ key: e.key, value: e.value })
     return { value: e.value }
@@ -435,4 +436,13 @@ test('/sc list shows closed chains to read; /sc settings writes the plugin setti
     { key: 'better-subchat.maxDepth', value: 7 },
   ])
   await ui.unmount()
+})
+
+test('a hand-back reaching the main conversation is taken silently; other peer messages pass', LIGHT, async ($, on) => {
+  world(on)
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+  const handback = await $.session.receive({ origin: { kind: 'peer', plugin: 'better-subchat' }, text: '[Subagent hand-back] the report' })
+  expect(handback.consumed).toContain('better-subchat')
+  const other = await $.session.receive({ origin: { kind: 'peer', plugin: 'another-plugin' }, text: 'hello' })
+  expect(other).toEqual({ text: 'hello' })
 })
